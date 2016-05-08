@@ -165,7 +165,7 @@ public class ImageTargets extends Activity implements SampleApplicationControl,
 
     // We want to load specific textures from the APK, which we will later use
     // for rendering.
-
+    // TODO: 5/8/16
     private void loadTextures()
     {
         mTextures.add(Texture.loadTextureFromApk("TextureTeapotBrass.png",
@@ -273,6 +273,7 @@ public class ImageTargets extends Activity implements SampleApplicationControl,
         }
 
         // Unload texture:
+        // TODO: 5/8/16
         mTextures.clear();
         mTextures = null;
 
@@ -349,11 +350,6 @@ public class ImageTargets extends Activity implements SampleApplicationControl,
         for (int count = 0; count < numTrackables; count++)
         {
             Trackable trackable = mCurrentDataset.getTrackable(count);
-            if(isExtendedTrackingActive())
-            {
-                trackable.startExtendedTracking();
-            }
-
             String name = "Current Dataset : " + trackable.getName();
             trackable.setUserData(name);
             Log.d(LOGTAG, "UserData:Set the following user data "
@@ -397,7 +393,6 @@ public class ImageTargets extends Activity implements SampleApplicationControl,
     @Override
     public void onInitARDone(SampleApplicationException exception)
     {
-
         if (exception == null)
         {
             initApplicationAR();
@@ -580,12 +575,6 @@ public class ImageTargets extends Activity implements SampleApplicationControl,
             return true;
 
         return mGestureDetector.onTouchEvent(event);
-    }
-
-
-    boolean isExtendedTrackingActive()
-    {
-        return mExtendedTracking;
     }
 
     final public static int CMD_BACK = -1;
