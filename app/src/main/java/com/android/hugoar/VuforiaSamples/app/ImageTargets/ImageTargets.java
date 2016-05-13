@@ -30,7 +30,6 @@ import com.android.hugoar.SampleApplication.SampleApplicationException;
 import com.android.hugoar.SampleApplication.SampleApplicationSession;
 import com.android.hugoar.SampleApplication.utils.LoadingDialogHandler;
 import com.android.hugoar.SampleApplication.utils.SampleApplicationGLView;
-import com.android.hugoar.SampleApplication.utils.Texture;
 import com.android.hugoar.VuforiaSamples.ui.SampleAppMenu.SampleAppMenu;
 import com.vuforia.CameraDevice;
 import com.vuforia.DataSet;
@@ -43,7 +42,6 @@ import com.vuforia.TrackerManager;
 import com.vuforia.Vuforia;
 
 import java.util.ArrayList;
-import java.util.Vector;
 
 
 public class ImageTargets extends Activity implements SampleApplicationControl
@@ -64,9 +62,6 @@ public class ImageTargets extends Activity implements SampleApplicationControl
 
     // Our renderer:
     private ImageTargetRenderer mRenderer;
-
-    // The textures we will use for rendering:
-    private Vector<Texture> mTextures;
 
     public boolean mExtendedTracking = false;
 
@@ -100,29 +95,9 @@ public class ImageTargets extends Activity implements SampleApplicationControl
 
         vuforiaAppSession.initAR(this, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-        // Load any sample specific textures:
-        mTextures = new Vector<Texture>();
-        loadTextures();
-
         mIsDroidDevice = Build.MODEL.toLowerCase().startsWith(
             "droid");
 
-    }
-
-
-    // We want to load specific textures from the APK, which we will later use
-    // for rendering.
-    // TODO: 5/8/16
-    private void loadTextures()
-    {
-        mTextures.add(Texture.loadTextureFromApk("TextureTeapotBrass.png",
-                getAssets()));
-        mTextures.add(Texture.loadTextureFromApk("TextureTeapotBlue.png",
-                getAssets()));
-        mTextures.add(Texture.loadTextureFromApk("TextureTeapotRed.png",
-            getAssets()));
-        mTextures.add(Texture.loadTextureFromApk("ImageTargets/Buildings.jpeg",
-            getAssets()));
     }
 
 
@@ -182,8 +157,9 @@ public class ImageTargets extends Activity implements SampleApplicationControl
         }
 
         // Turn off the flash
-        mAppMenu.turnoffFlash();
-
+        if(mAppMenu!=null) {
+            mAppMenu.turnoffFlash();
+        }
         try
         {
             vuforiaAppSession.pauseAR();
@@ -209,11 +185,6 @@ public class ImageTargets extends Activity implements SampleApplicationControl
             Log.e(LOGTAG, e.getString());
         }
 
-        // Unload texture:
-        // TODO: 5/8/16
-        mTextures.clear();
-        mTextures = null;
-
         System.gc();
     }
 
@@ -230,7 +201,6 @@ public class ImageTargets extends Activity implements SampleApplicationControl
         mGlView.init(translucent, depthSize, stencilSize);
 
         mRenderer = new ImageTargetRenderer(this, vuforiaAppSession);
-        mRenderer.setTextures(mTextures);
         mGlView.setRenderer(mRenderer);
 
     }

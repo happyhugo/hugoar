@@ -15,11 +15,8 @@ import android.opengl.Matrix;
 import android.util.Log;
 
 import com.android.hugoar.SampleApplication.SampleApplicationSession;
-import com.android.hugoar.SampleApplication.utils.CubeShaders;
 import com.android.hugoar.SampleApplication.utils.LoadingDialogHandler;
-import com.android.hugoar.SampleApplication.utils.SampleUtils;
-import com.android.hugoar.SampleApplication.utils.Teapot;
-import com.android.hugoar.SampleApplication.utils.Texture;
+import com.android.hugoar.VuforiaSamples.base.Model;
 import com.vuforia.Matrix44F;
 import com.vuforia.Renderer;
 import com.vuforia.State;
@@ -28,8 +25,6 @@ import com.vuforia.Trackable;
 import com.vuforia.TrackableResult;
 import com.vuforia.VIDEO_BACKGROUND_REFLECTION;
 import com.vuforia.Vuforia;
-
-import java.util.Vector;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -45,16 +40,10 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
     private Renderer mRenderer;
     boolean mIsActive = false;
 
-    // TODO: 5/8/16
-    private Vector<Texture> mTextures;
-    private int shaderProgramID;
-    private int vertexHandle;
-    private int normalHandle;
-    private int textureCoordHandle;
-    private int mvpMatrixHandle;
-    private int texSampler2DHandle;
-    private Teapot mTeapot;
     private static final float OBJECT_SCALE_FLOAT = 3.0f;
+
+    // TODO: 5/13/16
+    private Model model;
     
     
     public ImageTargetRenderer(ImageTargets activity,
@@ -84,7 +73,8 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
         Log.d(LOGTAG, "GLRenderer.onSurfaceCreated");
         
         initRendering();
-        
+        // TODO: 5/13/16
+        model=new Model(mActivity.getResources(),"banana.obj");
         // Call Vuforia function to (re)initialize rendering after first use
         // or after OpenGL ES context was lost (e.g. after onPause/onResume):
         vuforiaAppSession.onSurfaceCreated();
@@ -96,52 +86,18 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
     public void onSurfaceChanged(GL10 gl, int width, int height)
     {
         Log.d(LOGTAG, "GLRenderer.onSurfaceChanged");
-        
+        // TODO: 5/13/16
+        model.initCamera(width, height);
         // Call Vuforia function to handle render surface size changes:
         vuforiaAppSession.onSurfaceChanged(width, height);
     }
     
-    // TODO: 5/8/16
     // Function for initializing the renderer.
     private void initRendering()
     {
-
-        
         mRenderer = Renderer.getInstance();
-        
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, Vuforia.requiresAlpha() ? 0.0f
                 : 1.0f);
-
-        // TODO: 5/8/16
-        mTeapot = new Teapot();
-        for (Texture t : mTextures)
-        {
-            GLES20.glGenTextures(1, t.mTextureID, 0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, t.mTextureID[0]);
-            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-                    GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-                    GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
-                    t.mWidth, t.mHeight, 0, GLES20.GL_RGBA,
-                    GLES20.GL_UNSIGNED_BYTE, t.mData);
-        }
-        
-        shaderProgramID = SampleUtils.createProgramFromShaderSrc(
-            CubeShaders.CUBE_MESH_VERTEX_SHADER,
-            CubeShaders.CUBE_MESH_FRAGMENT_SHADER);
-        
-        vertexHandle = GLES20.glGetAttribLocation(shaderProgramID,
-                "vertexPosition");
-        normalHandle = GLES20.glGetAttribLocation(shaderProgramID,
-                "vertexNormal");
-        textureCoordHandle = GLES20.glGetAttribLocation(shaderProgramID,
-                "vertexTexCoord");
-        mvpMatrixHandle = GLES20.glGetUniformLocation(shaderProgramID,
-                "modelViewProjectionMatrix");
-        texSampler2DHandle = GLES20.glGetUniformLocation(shaderProgramID,
-                "texSampler2D");
-        
         // Hide the Loading Dialog
         mActivity.loadingDialogHandler
             .sendEmptyMessage(LoadingDialogHandler.HIDE_LOADING_DIALOG);
@@ -178,12 +134,6 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
             Matrix44F modelViewMatrix_Vuforia = Tool.convertPose2GLMatrix(result.getPose());
             float[] modelViewMatrix = modelViewMatrix_Vuforia.getData();
 
-
-            int textureIndex = trackable.getName().equalsIgnoreCase("stones") ? 0
-                : 1;
-            textureIndex = trackable.getName().equalsIgnoreCase("tarmac") ? 2
-                : textureIndex;
-            
             // deal with the modelview and projection matrices
             float[] modelViewProjection = new float[16];
             
@@ -195,44 +145,10 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
                     .getProjectionMatrix().getData(), 0, modelViewMatrix, 0);
             
             // activate the shader program and bind the vertex/normal/tex coords
-            GLES20.glUseProgram(shaderProgramID);
-            
+            // TODO: 5/13/16
+            model.drawSelf(vuforiaAppSession
+                    .getProjectionMatrix().getData(), modelViewMatrix);
 
-                GLES20.glVertexAttribPointer(vertexHandle, 3, GLES20.GL_FLOAT,
-                        false, 0, mTeapot.getVertices());
-                GLES20.glVertexAttribPointer(normalHandle, 3, GLES20.GL_FLOAT,
-                        false, 0, mTeapot.getNormals());
-                GLES20.glVertexAttribPointer(textureCoordHandle, 2,
-                        GLES20.GL_FLOAT, false, 0, mTeapot.getTexCoords());
-                
-                GLES20.glEnableVertexAttribArray(vertexHandle);
-                GLES20.glEnableVertexAttribArray(normalHandle);
-                GLES20.glEnableVertexAttribArray(textureCoordHandle);
-                
-                // activate texture 0, bind it, and pass to shader
-                GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,
-                        mTextures.get(textureIndex).mTextureID[0]);
-                GLES20.glUniform1i(texSampler2DHandle, 0);
-                
-                // pass the model view matrix to the shader
-                GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false,
-                        modelViewProjection, 0);
-                
-                // finally draw the teapot
-                GLES20.glDrawElements(GLES20.GL_TRIANGLES,
-                        mTeapot.getNumObjectIndex(), GLES20.GL_UNSIGNED_SHORT,
-                        mTeapot.getIndices());
-                
-                // disable the enabled arrays
-                GLES20.glDisableVertexAttribArray(vertexHandle);
-                GLES20.glDisableVertexAttribArray(normalHandle);
-                GLES20.glDisableVertexAttribArray(textureCoordHandle);
-
-
-            
-            SampleUtils.checkGLError("Render Frame");
-            
         }
         
         GLES20.glDisable(GLES20.GL_DEPTH_TEST);
@@ -245,12 +161,6 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
     {
         String userData = (String) trackable.getUserData();
         Log.d(LOGTAG, "UserData:Retreived User Data	\"" + userData + "\"");
-    }
-    
-    
-    public void setTextures(Vector<Texture> textures)
-    {
-        mTextures = textures;
     }
     
 }
