@@ -16,6 +16,7 @@ import com.android.hugoar.R;
 import com.android.hugoar.SampleApplication.SampleApplicationException;
 import com.android.hugoar.VuforiaSamples.ui.SampleAppMenu.SampleAppMenuGroup;
 import com.android.hugoar.VuforiaSamples.ui.SampleAppMenu.SampleAppMenuInterface;
+import com.android.hugoar.VuforiaSamples.video.VideoPlayerHelper;
 import com.vuforia.CameraDevice;
 import com.vuforia.Trackable;
 
@@ -33,6 +34,7 @@ public class AppMenu implements SampleAppMenuInterface {
     final public static int CMD_CAMERA_FRONT = 4;
     final public static int CMD_CAMERA_REAR = 5;
     final public static int CMD_DATASET_START_INDEX = 6;
+    final private static int CMD_FULLSCREEN_VIDEO = 7;
 
     ImageTargets activity;
 
@@ -40,6 +42,7 @@ public class AppMenu implements SampleAppMenuInterface {
     private boolean mContAutofocus = false;
     private View mFlashOptionView;
     public GestureDetector mGestureDetector;
+    public boolean mPlayFullscreenVideo = false;
 
     public AppMenu(Activity activity){
         this.activity = (ImageTargets)activity;
@@ -135,7 +138,19 @@ public class AppMenu implements SampleAppMenuInterface {
                 }
                 activity.doStartTrackers();
                 break;
+            case CMD_FULLSCREEN_VIDEO:
+                mPlayFullscreenVideo = !mPlayFullscreenVideo;
 
+                for(int i = 0; i < activity.videoControl.mVideoPlayerHelper.length; i++)
+                {
+                    if (activity.videoControl.mVideoPlayerHelper[i].getStatus() == VideoPlayerHelper.MEDIA_STATE.PLAYING)
+                    {
+                        // If it is playing then we pause it
+                        activity.videoControl. mVideoPlayerHelper[i].pause();
+                        activity.videoControl.mVideoPlayerHelper[i].play(true,activity.videoControl.mSeekPosition[i]);
+                    }
+                }
+                break;
             case CMD_EXTENDED_TRACKING:
                 for (int tIdx = 0; tIdx < activity.mCurrentDataset.getNumTrackables(); tIdx++)
                 {
@@ -200,26 +215,31 @@ public class AppMenu implements SampleAppMenuInterface {
             return true;
         }
 
-
-        @Override
-        public boolean onSingleTapUp(MotionEvent e)
+        // Handle the single tap
+        public boolean onSingleTapConfirmed(MotionEvent e)
         {
-            // Generates a Handler to trigger autofocus
-            // after 1 second
-            autofocusHandler.postDelayed(new Runnable()
-            {
-                public void run()
-                {
-                    boolean result = CameraDevice.getInstance().setFocusMode(
-                            CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);
-
-                    if (!result)
-                        Log.e("SingleTapUp", "Unable to trigger focus");
-                }
-            }, 1000L);
-
-            return true;
+            return activity.videoControl.playOrPauseVideo(e);
         }
+
+//        @Override
+//        public boolean onSingleTapUp(MotionEvent e)
+//        {
+//            // Generates a Handler to trigger autofocus
+//            // after 1 second
+//            autofocusHandler.postDelayed(new Runnable()
+//            {
+//                public void run()
+//                {
+//                    boolean result = CameraDevice.getInstance().setFocusMode(
+//                            CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);
+//
+//                    if (!result)
+//                        Log.e("SingleTapUp", "Unable to trigger focus");
+//                }
+//            }, 1000L);
+//
+//            return true;
+//        }
     }
 
     // This method sets the menu's settings
@@ -229,6 +249,13 @@ public class AppMenu implements SampleAppMenuInterface {
 
         group = activity.mSampleAppMenu.addGroup("", false);
         group.addTextItem(activity.getString(R.string.menu_back), -1);
+
+        group = activity.mSampleAppMenu.addGroup("", true);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+        {
+            group.addSelectionItem(activity.getString(R.string.menu_playFullscreenVideo),
+                    CMD_FULLSCREEN_VIDEO, mPlayFullscreenVideo);
+        }
 
         group = activity.mSampleAppMenu.addGroup("", true);
         group.addSelectionItem(activity.getString(R.string.menu_extended_tracking),

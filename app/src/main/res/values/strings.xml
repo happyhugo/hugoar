@@ -65,6 +65,7 @@
     <string name="menu_button_blue">Blue</string>
     <string name="menu_button_yellow">Yellow</string>
     <string name="menu_button_green">Green</string>
+    <string name="menu_playFullscreenVideo">Play Fullscreen</string>
         
     <string name="splash_screen_description">Vuforia Splash</string>
     

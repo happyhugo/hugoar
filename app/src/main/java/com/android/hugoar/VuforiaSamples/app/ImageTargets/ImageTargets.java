@@ -13,6 +13,7 @@ package com.android.hugoar.VuforiaSamples.app.ImageTargets;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -31,6 +32,7 @@ import com.android.hugoar.SampleApplication.SampleApplicationSession;
 import com.android.hugoar.SampleApplication.utils.LoadingDialogHandler;
 import com.android.hugoar.SampleApplication.utils.SampleApplicationGLView;
 import com.android.hugoar.VuforiaSamples.ui.SampleAppMenu.SampleAppMenu;
+import com.android.hugoar.VuforiaSamples.video.VideoControl;
 import com.vuforia.CameraDevice;
 import com.vuforia.DataSet;
 import com.vuforia.ObjectTracker;
@@ -61,7 +63,7 @@ public class ImageTargets extends Activity implements SampleApplicationControl
     private SampleApplicationGLView mGlView;
 
     // Our renderer:
-    private ImageTargetRenderer mRenderer;
+    public ImageTargetRenderer mRenderer;
 
     public boolean mExtendedTracking = false;
 
@@ -79,6 +81,8 @@ public class ImageTargets extends Activity implements SampleApplicationControl
     boolean mIsDroidDevice = false;
 
 
+    public VideoControl videoControl;
+
     // Called when the activity first starts or the user navigates back to an
     // activity.
     @Override
@@ -94,6 +98,8 @@ public class ImageTargets extends Activity implements SampleApplicationControl
         mDatasetStrings.add("Tarmac.xml");
 
         vuforiaAppSession.initAR(this, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        videoControl = new VideoControl(this);
 
         mIsDroidDevice = Build.MODEL.toLowerCase().startsWith(
             "droid");
@@ -130,8 +136,19 @@ public class ImageTargets extends Activity implements SampleApplicationControl
             mGlView.onResume();
         }
 
+        videoControl.resumeVideo();
     }
 
+    // Called when returning from the full screen player
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        if (requestCode == 1) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            if (resultCode == RESULT_OK) {
+                videoControl.backActivityResult(data);
+            }
+        }
+    }
 
     // Callback for configuration changes the activity handles itself
     @Override
@@ -160,6 +177,9 @@ public class ImageTargets extends Activity implements SampleApplicationControl
         if(mAppMenu!=null) {
             mAppMenu.turnoffFlash();
         }
+
+        videoControl.pauseVideo();
+
         try
         {
             vuforiaAppSession.pauseAR();
@@ -185,9 +205,17 @@ public class ImageTargets extends Activity implements SampleApplicationControl
             Log.e(LOGTAG, e.getString());
         }
 
+        videoControl.destroyVideo();
+
         System.gc();
     }
 
+    // Do not exit immediately and instead show the startup screen
+    public void onBackPressed()
+    {
+        videoControl.pauseAll(-1);
+        super.onBackPressed();
+    }
 
     // Initializes AR application components.
     private void initApplicationAR()
@@ -411,24 +439,17 @@ public class ImageTargets extends Activity implements SampleApplicationControl
 
 
     @Override
-    public boolean doInitTrackers()
-    {
+    public boolean doInitTrackers(){
         // Indicate if the trackers were initialized correctly
         boolean result = true;
 
         TrackerManager tManager = TrackerManager.getInstance();
-        Tracker tracker;
-
         // Trying to initialize the image tracker
-        tracker = tManager.initTracker(ObjectTracker.getClassType());
-        if (tracker == null)
-        {
-            Log.e(
-                    LOGTAG,
-                    "Tracker not initialized. Tracker already initialized or the camera is already started");
+        Tracker tracker = tManager.initTracker(ObjectTracker.getClassType());
+        if (tracker == null){
+            Log.e(LOGTAG,"Tracker not initialized. Tracker already initialized or the camera is already started");
             result = false;
-        } else
-        {
+        } else{
             Log.i(LOGTAG, "Tracker successfully initialized");
         }
         return result;
