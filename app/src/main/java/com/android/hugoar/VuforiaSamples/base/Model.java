@@ -127,7 +127,7 @@ public class Model {
     {
         //在Effect类里面渲染 好像有点与理不合，不过确实方便不少
         //空值不检测了 使用时小心
-//        GLES20.glUseProgram(hProgram);
+        GLES20.glUseProgram(hProgram);
         //计算矩阵
         float[] mxWVP = new float[16];
         float[] mxWorldView = new float[16];

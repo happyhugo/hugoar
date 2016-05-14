@@ -50,7 +50,7 @@ public class ImageTargets extends Activity implements SampleApplicationControl
 {
     private static final String LOGTAG = "ImageTargets";
 
-    SampleApplicationSession vuforiaAppSession;
+    public SampleApplicationSession vuforiaAppSession;
 
     public DataSet mCurrentDataset;
     public int mCurrentDatasetSelectionIndex = 0;
@@ -197,6 +197,8 @@ public class ImageTargets extends Activity implements SampleApplicationControl
         Log.d(LOGTAG, "onDestroy");
         super.onDestroy();
 
+        videoControl.destroyVideo();
+
         try
         {
             vuforiaAppSession.stopAR();
@@ -205,7 +207,8 @@ public class ImageTargets extends Activity implements SampleApplicationControl
             Log.e(LOGTAG, e.getString());
         }
 
-        videoControl.destroyVideo();
+        mRenderer.videoModel.mTextures.clear();
+        mRenderer.videoModel.mTextures = null;
 
         System.gc();
     }
@@ -229,8 +232,17 @@ public class ImageTargets extends Activity implements SampleApplicationControl
         mGlView.init(translucent, depthSize, stencilSize);
 
         mRenderer = new ImageTargetRenderer(this, vuforiaAppSession);
+
+        // The renderer comes has the OpenGL context, thus, loading to texture
+        // must happen when the surface has been created. This means that we
+        // can't load the movie from this thread (GUI) but instead we must
+        // tell the GL thread to load it once the surface has been created.
+
+        videoControl.setmVideoPlayerHelper();
+
         mGlView.setRenderer(mRenderer);
 
+        videoControl.initApplicationAR();
     }
 
 

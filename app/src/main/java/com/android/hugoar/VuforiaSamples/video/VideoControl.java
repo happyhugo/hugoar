@@ -16,7 +16,7 @@ public class VideoControl {
     public VideoPlayerHelper mVideoPlayerHelper[] = null;
     public int mSeekPosition[] = null;
     private boolean mWasPlaying[] = null;
-    private String mMovieName[] = null;
+    public String mMovieName[] = null;
     // A boolean to indicate whether we come from full screen:
     private boolean mReturningFromFullScreen = false;
 
@@ -38,7 +38,7 @@ public class VideoControl {
             mVideoPlayerHelper[i].setActivity(activity);
         }
 
-        mMovieName[STONES] = "VideoPlayback/green_flag.mp4";
+        mMovieName[STONES] = "VideoPlayback/VuforiaSizzleReel_1.mp4";
         mMovieName[CHIPS] = "VideoPlayback/VuforiaSizzleReel_2.mp4";
     }
 
@@ -49,23 +49,16 @@ public class VideoControl {
             for (int i = 0; i < NUM_TARGETS; i++)
             {
                 if (!mReturningFromFullScreen){
-                    activity.mRenderer.requestLoad(i, mMovieName[i], mSeekPosition[i],
+                    activity.mRenderer.videoModel.requestLoad(i, mMovieName[i], mSeekPosition[i],
                             false);
                 } else{
-                    activity.mRenderer.requestLoad(i, mMovieName[i], mSeekPosition[i],
+                    activity.mRenderer.videoModel.requestLoad(i, mMovieName[i], mSeekPosition[i],
                             mWasPlaying[i]);
                 }
             }
         }
 
         mReturningFromFullScreen = false;
-    }
-
-    public void requestLoad(){
-        for (int i = 0; i < NUM_TARGETS; i++)
-        {
-            activity.mRenderer.requestLoad(i, mMovieName[i], 0, false);
-        }
     }
 
     public void backActivityResult(Intent data){
@@ -139,17 +132,36 @@ public class VideoControl {
         }
     }
 
+    public void setmVideoPlayerHelper(){
+        for (int i = 0; i < NUM_TARGETS; i++)
+        {
+            activity.mRenderer.videoModel.setVideoPlayerHelper(i, mVideoPlayerHelper[i]);
+            activity.mRenderer.videoModel.requestLoad(i, mMovieName[i], 0, false);
+        }
+    }
+
+    public void initApplicationAR(){
+        for (int i = 0; i < NUM_TARGETS; i++)
+        {
+            float[] temp = { 0f, 0f, 0f };
+            activity.mRenderer.videoModel.targetPositiveDimensions[i].setData(temp);
+            activity.mRenderer.videoModel.videoPlaybackTextureID[i] = -1;
+        }
+    }
+
     public boolean playOrPauseVideo(MotionEvent e){
         for (int i = 0; i < NUM_TARGETS; i++)
         {
             // Verify that the tap happened inside the target
-            if (activity.mRenderer!= null && activity.mRenderer.isTapOnScreenInsideTarget(i, e.getX(), e.getY()))
+            if (activity.mRenderer!= null && activity.mRenderer.videoModel.isTapOnScreenInsideTarget(i, e.getX(), e.getY()))
             {
                 // Check if it is playable on texture
+                System.out.println("aaaa:1");
                 if (mVideoPlayerHelper[i].isPlayableOnTexture())
                 {
                     // We can play only if the movie was paused, ready
                     // or stopped
+                    System.out.println("aaaa:2");
                     if ((mVideoPlayerHelper[i].getStatus() == VideoPlayerHelper.MEDIA_STATE.PAUSED)
                             || (mVideoPlayerHelper[i].getStatus() == VideoPlayerHelper.MEDIA_STATE.READY)
                             || (mVideoPlayerHelper[i].getStatus() == VideoPlayerHelper.MEDIA_STATE.STOPPED)
@@ -161,7 +173,7 @@ public class VideoControl {
                         // If it has reached the end then rewind
                         if ((mVideoPlayerHelper[i].getStatus() == VideoPlayerHelper.MEDIA_STATE.REACHED_END))
                             mSeekPosition[i] = 0;
-
+                        System.out.println("aaaa:3");
                         mVideoPlayerHelper[i].play(activity.mAppMenu.mPlayFullscreenVideo,
                                 mSeekPosition[i]);
                         mSeekPosition[i] = VideoPlayerHelper.CURRENT_POSITION;
@@ -185,7 +197,6 @@ public class VideoControl {
                 // can be playing at any point in time. This break
                 // prevents that, say, overlapping videos trigger
                 // simultaneously playback.
-                break;
             }
         }
         return false;
