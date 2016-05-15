@@ -88,7 +88,7 @@ public class Model {
         GLES20.glUniformMatrix4fv(hmxView, 1, false, mxView, 0);   //摄像矩阵
         GLES20.glUniformMatrix4fv(hmxWorldView, 1, false, mxWorldView, 0);  //摄像矩阵与变换矩阵
         //传光向量
-        float[] v3LightDir = {-0.37139067f, -0.9284767f, -0.0f};
+        float[] v3LightDir = {0f, 0f, 1f};
 //      lcamera.GetLook(v3LightDir);
         GLES20.glUniform3fv(hv3LightDir, 1, v3LightDir, 0);
         //分SUBSET 传顶点及纹理 并 draw\

@@ -17,5 +17,5 @@ void main(void)
    _v3PosVS = (g_mxWorldView * vec4(v3Pos,1)).xyz;
    _v3NormalVS = (g_mxWorldView * vec4(v3Normal,0)).xyz;
    _v2UV = v2UV;   
-   _v3LightDirVS = (vec4(g_v3LightDir,0)).xyz;
+//   _v3LightDirVS = (vec4(g_v3LightDir,0)).xyz;
 }

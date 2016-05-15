@@ -17,6 +17,7 @@ import android.util.Log;
 import com.android.hugoar.SampleApplication.SampleApplicationSession;
 import com.android.hugoar.SampleApplication.utils.LoadingDialogHandler;
 import com.android.hugoar.VuforiaSamples.base.Model;
+import com.android.hugoar.VuforiaSamples.font.TextRect;
 import com.android.hugoar.VuforiaSamples.video.VideoModel;
 import com.vuforia.Matrix44F;
 import com.vuforia.Renderer;
@@ -41,11 +42,12 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
     private Renderer mRenderer;
     boolean mIsActive = false;
 
-    private static final float OBJECT_SCALE_FLOAT = 30.0f;
+    private static final float OBJECT_SCALE_FLOAT = 40.0f;
 
     // TODO: 5/13/16
     private Model model;
     public VideoModel videoModel;
+    public TextRect textModel;
     
     public ImageTargetRenderer(ImageTargets activity,
         SampleApplicationSession session)
@@ -77,15 +79,17 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
     {
         Log.d(LOGTAG, "GLRenderer.onSurfaceCreated");
         
-        initRendering();
-        // TODO: 5/13/16
-        model=new Model(mActivity.getResources(),"banana.obj");
 
+        // TODO: 5/13/16
+        model=new Model(mActivity.getResources(),"Tails.obj");
+        textModel = new TextRect(mActivity.getResources());
         // Call Vuforia function to (re)initialize rendering after first use
         // or after OpenGL ES context was lost (e.g. after onPause/onResume):
         vuforiaAppSession.onSurfaceCreated();
 
         videoModel.initModel();
+
+        initRendering();
     }
     
     
@@ -115,10 +119,6 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
         
     }
 
-    private void renderFrames(){
-        videoModel.drawSelf(vuforiaAppSession);
-    }
-
     // The render function.
     private void renderFrame()
     {
@@ -146,8 +146,23 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
             Trackable trackable = result.getTrackable();
             printUserData(trackable);
 
-            if(trackable.getName().compareTo("stones")==0) {
+            if(trackable.getName().compareTo("tarmac")==0) {
 
+                Matrix44F modelViewMatrix_Vuforia = Tool.convertPose2GLMatrix(result.getPose());
+                float[] modelViewMatrix = modelViewMatrix_Vuforia.getData();
+
+
+                Matrix.translateM(modelViewMatrix, 0, 0.0f, 0.0f, OBJECT_SCALE_FLOAT);
+                Matrix.scaleM(modelViewMatrix, 0, OBJECT_SCALE_FLOAT, OBJECT_SCALE_FLOAT, OBJECT_SCALE_FLOAT);
+
+                // activate the shader program and bind the vertex/normal/tex coords
+                // TODO: 5/13/16
+                model.drawSelf(vuforiaAppSession
+                        .getProjectionMatrix().getData(), modelViewMatrix);
+
+            }else if(trackable.getName().compareTo("chips")==0){
+                videoModel.drawSelf(trackable,vuforiaAppSession,result);
+            }else if(trackable.getName().compareTo("stones")==0){
                 Matrix44F modelViewMatrix_Vuforia = Tool.convertPose2GLMatrix(result.getPose());
                 float[] modelViewMatrix = modelViewMatrix_Vuforia.getData();
 
@@ -161,13 +176,7 @@ public class ImageTargetRenderer implements GLSurfaceView.Renderer
                 Matrix.multiplyMM(modelViewProjection, 0, vuforiaAppSession
                         .getProjectionMatrix().getData(), 0, modelViewMatrix, 0);
 
-                // activate the shader program and bind the vertex/normal/tex coords
-                // TODO: 5/13/16
-                model.drawSelf(vuforiaAppSession
-                        .getProjectionMatrix().getData(), modelViewMatrix);
-
-            }else if(trackable.getName().compareTo("chips")==0){
-                videoModel.drawSelf(trackable,vuforiaAppSession,result);
+                textModel.drawSelf(modelViewProjection);
             }
         }
         
